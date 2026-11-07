@@ -1,14 +1,9 @@
 <!--
 [AgentReadme]
-文件说明：GitHub Pages 手机试玩入口，先激活 Godot Service Worker，再进入游戏页面。
-类：
-- 无
-函数：
-- openGame()：注册并激活 Service Worker，获得页面控制权后进入 game.html。
-变量：
-- gameUrl（string，模块常量）：Godot 游戏页面相对地址。
-- registration（ServiceWorkerRegistration，局部变量）：当前站点的 Service Worker 注册信息。
-维护规则：入口只负责缓存初始化和跳转；不得加载项目源码、凭据或第三方脚本。
+摘要：在进入 Godot Web 页面前完成离线缓存初始化。
+职责：在进入 Godot 页面前完成 Service Worker 注册与页面控制权交接。
+设计：启动壳与游戏页面分离，避免把缓存初始化逻辑耦合进导出产物。
+边界：不加载项目源码、凭据或第三方脚本。
 [/AgentReadme]
 -->
 <!doctype html>
