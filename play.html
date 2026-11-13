@@ -1,0 +1,18 @@
+<!-- [AgentReadme]
+摘要：联网确认发布清单后进入独立版本目录，检查失败明确提示，不静默进入旧版。
+[/AgentReadme] -->
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>FirstIrestella</title>
+<style>body{margin:0;min-height:100dvh;display:grid;place-content:center;background:#202020;color:#f3f3f3;font:18px system-ui;text-align:center;padding:24px;box-sizing:border-box}button{font:inherit;min-height:48px;padding:10px 24px;margin:16px}</style>
+<div id="status">正在检查最新试玩版本…</div><button hidden id="retry">重新检查</button>
+<script>
+const status=document.getElementById('status'),retry=document.getElementById('retry');
+async function openGame(){retry.hidden=true;status.textContent='正在检查最新试玩版本…';try{
+ const response=await fetch('release.json?t='+Date.now(),{cache:'no-store',signal:AbortSignal.timeout(20000)});
+ if(!response.ok)throw Error('manifest');const release=await response.json();
+ if(!/^[a-f0-9]{16}$/.test(release.version))throw Error('version');
+ const target='releases/'+release.version+'/index.html';
+ const check=await fetch(target,{cache:'no-store',signal:AbortSignal.timeout(20000)});if(!check.ok)throw Error('release');
+ status.textContent='正在进入版本 '+release.version.slice(0,8);location.replace(target);
+}catch{status.textContent='无法确认最新版本，请检查网络后重试。';retry.hidden=false;}}
+retry.onclick=openGame;openGame();
+</script></html>

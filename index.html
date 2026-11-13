@@ -1,70 +1,18 @@
-<!--
-[AgentReadme]
-摘要：进入 Godot Web 页面前检查更新并完成离线缓存版本交接。
-职责：在进入 Godot 页面前完成 Service Worker 注册与页面控制权交接。
-设计：启动壳与游戏页面分离，避免把缓存初始化逻辑耦合进导出产物。
-边界：不加载项目源码、凭据或第三方脚本。
-[/AgentReadme]
--->
-<!doctype html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#202020">
-    <title>FirstIrestella</title>
-    <style>
-        html, body { width: 100%; height: 100%; margin: 0; background: #202020; color: #f3f3f3; }
-        body { display: grid; place-items: center; font: 16px system-ui, sans-serif; }
-    </style>
-</head>
-<body>
-    <div>正在进入村落…</div>
-    <script>
-        const gameUrl = 'game.html';
-
-        async function openGame() {
-            if (!('serviceWorker' in navigator)) {
-                window.location.replace(gameUrl);
-                return;
-            }
-
-            const registration = await navigator.serviceWorker.register('index.service.worker.js', { updateViaCache: 'none' });
-            // Check at the entry page, before a new game session has unsaved work.
-            // Claim only; never use Godot's "update" message which reloads other tabs.
-            await registration.update();
-            if (registration.installing) {
-                const installing = registration.installing;
-                await new Promise((resolve, reject) => {
-                    const timer = setTimeout(() => reject(new Error('Update timed out')), 20000);
-                    const changed = () => {
-                        if (installing.state === 'installed' || installing.state === 'activated') {
-                            clearTimeout(timer);
-                            installing.removeEventListener('statechange', changed);
-                            resolve();
-                        } else if (installing.state === 'redundant') {
-                            clearTimeout(timer);
-                            reject(new Error('Update unavailable'));
-                        }
-                    };
-                    installing.addEventListener('statechange', changed);
-                    changed();
-                });
-            }
-            await navigator.serviceWorker.ready;
-            const worker = registration.waiting || registration.active;
-            if (!worker || navigator.serviceWorker.controller === worker) {
-                window.location.replace(gameUrl);
-                return;
-            }
-
-            navigator.serviceWorker.addEventListener('controllerchange', () => {
-                window.location.replace(gameUrl);
-            }, { once: true });
-            worker.postMessage('claim');
-        }
-
-        openGame().catch(() => window.location.replace(gameUrl));
-    </script>
-</body>
-</html>
+<!-- [AgentReadme]
+摘要：联网确认发布清单后进入独立版本目录，检查失败明确提示，不静默进入旧版。
+[/AgentReadme] -->
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>FirstIrestella</title>
+<style>body{margin:0;min-height:100dvh;display:grid;place-content:center;background:#202020;color:#f3f3f3;font:18px system-ui;text-align:center;padding:24px;box-sizing:border-box}button{font:inherit;min-height:48px;padding:10px 24px;margin:16px}</style>
+<div id="status">正在检查最新试玩版本…</div><button hidden id="retry">重新检查</button>
+<script>
+const status=document.getElementById('status'),retry=document.getElementById('retry');
+async function openGame(){retry.hidden=true;status.textContent='正在检查最新试玩版本…';try{
+ const response=await fetch('release.json?t='+Date.now(),{cache:'no-store',signal:AbortSignal.timeout(20000)});
+ if(!response.ok)throw Error('manifest');const release=await response.json();
+ if(!/^[a-f0-9]{16}$/.test(release.version))throw Error('version');
+ const target='releases/'+release.version+'/index.html';
+ const check=await fetch(target,{cache:'no-store',signal:AbortSignal.timeout(20000)});if(!check.ok)throw Error('release');
+ status.textContent='正在进入版本 '+release.version.slice(0,8);location.replace(target);
+}catch{status.textContent='无法确认最新版本，请检查网络后重试。';retry.hidden=false;}}
+retry.onclick=openGame;openGame();
+</script></html>
