@@ -4,7 +4,7 @@
 // Incrementing CACHE_VERSION will kick off the install event and force
 // previously cached resources to be updated from the network.
 /** @type {string} */
-const CACHE_VERSION = '1794654349|2239009';
+const CACHE_VERSION = '1794655196|2160651';
 /** @type {string} */
 const CACHE_PREFIX = 'FirstIrestella-sw-cache-';
 const CACHE_NAME = CACHE_PREFIX + CACHE_VERSION;
